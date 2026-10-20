@@ -484,7 +484,7 @@ export default function Header() {
                   <span className="text-[11px] font-medium">Contract</span>
                 </Link>
               ) : (
-                <Link href="/contract/request" className="hidden xl:flex flex-col items-center gap-1 text-gray-700 hover:text-green-700 min-w-[50px]">
+                <Link href={user?.contract_status === "Requested" ? "/contract/success" : "/contract/request"} className="hidden xl:flex flex-col items-center gap-1 text-gray-700 hover:text-green-700 min-w-[50px]">
                   <Scale className="w-5 h-5" />
                   <span className="text-[11px] font-medium">Contract</span>
                 </Link>

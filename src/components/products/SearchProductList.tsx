@@ -7,6 +7,7 @@ import { SearchProductData, SearchProductResponse } from "../../types/home.types
 import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
 import { Search } from "lucide-react";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 interface SearchProductListProps {
     query: string;
@@ -31,21 +32,7 @@ const SearchProductList = ({ query }: SearchProductListProps) => {
                     setLastPage(response.meta.last_page);
 
                     const mappedProducts: Product[] = response.data.map((item: SearchProductData) => {
-                        let finalPrice = item.selling_price;
-                        let oldPrice = undefined;
-                        let badge = undefined;
-
-                        if (item.discount_price) {
-                            finalPrice = item.discount_price;
-                            oldPrice = item.selling_price;
-
-                            const sell = parseFloat(item.selling_price);
-                            const disc = parseFloat(item.discount_price);
-                            if (sell > 0) {
-                                const percent = Math.round(((sell - disc) / sell) * 100);
-                                badge = `${percent}% Off`;
-                            }
-                        }
+                        const { price: finalPrice, oldPrice, badge } = getProductPrice(item);
 
                         const colors = item.product_color ? item.product_color.split(',').map(c => c.trim()).filter(Boolean) : [];
                         const sizes = item.product_size ? item.product_size.split(',').map(s => s.trim()).filter(Boolean) : [];

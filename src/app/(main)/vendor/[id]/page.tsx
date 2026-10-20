@@ -10,6 +10,7 @@ import Loading from "@/src/components/common/Loading";
 import ProductCard, { Product } from "@/src/components/common/ProductCard";
 import { Meta, Vendor, VendorDetailedResponse } from "@/src/types/home.types";
 import { ProductData } from "@/src/types/product.types";
+import { getProductPrice } from "@/src/utils/productPrice";
 import { CategoryData } from "@/src/types/vendor.types";
 
 
@@ -50,18 +51,7 @@ export default function VendorDetailView() {
     };
 
     const transformToProductCard = (product: ProductData): Product => {
-        const finalPrice = product.discount_price || product.selling_price;
-        const oldPrice = product.discount_price ? product.selling_price : undefined;
-
-        let badge = undefined;
-        if (product.discount_price) {
-            const sell = parseFloat(product.selling_price);
-            const disc = parseFloat(product.discount_price);
-            if (sell > 0) {
-                const percent = Math.round(((sell - disc) / sell) * 100);
-                badge = `${percent}% Off`;
-            }
-        }
+        const { price: finalPrice, oldPrice, badge } = getProductPrice(product);
 
         return {
             id: product.id,

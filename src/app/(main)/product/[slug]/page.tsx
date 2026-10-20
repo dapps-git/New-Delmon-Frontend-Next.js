@@ -16,6 +16,7 @@ import { clearWishlistError, clearWishlistMessage } from "@/src/redux/wishlist/w
 import { ProductData, RelatedProduct } from "@/src/types/product.types";
 import Image from "next/image";
 import ImageMagnifier from "../../../../components/common/ImageMagnifier";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 interface ProductImage {
     id: number;
@@ -128,14 +129,7 @@ export default function ProductDetailsPage() {
                     }
                     if (response.data.related?.length > 0) {
                         const mappedRelated: ProductCardType[] = response.data.related.map((item: RelatedProduct) => {
-                            let finalPrice = item.selling_price;
-                            let oldPrice = item.discount_price ? item.selling_price : undefined;
-                            if (item.discount_price) finalPrice = item.discount_price;
-                            let badge = undefined;
-                            if (item.discount_price && parseFloat(item.selling_price) > 0) {
-                                const percent = Math.round(((parseFloat(item.selling_price) - parseFloat(item.discount_price)) / parseFloat(item.selling_price)) * 100);
-                                badge = `${percent}% Off`;
-                            }
+                            const { price: finalPrice, oldPrice, badge } = getProductPrice(item);
                             return {
                                 id: item.id,
                                 slug: item.product_slug,
@@ -350,12 +344,10 @@ export default function ProductDetailsPage() {
         return applicablePrice ? applicablePrice.price_per_peice : null;
     };
 
-    const hasDiscount = product.discount_price !== null;
+    // Same precedence as the cart: wholesale > contract > discount > selling
+    const pricing = getProductPrice(product);
     const wholesalePrice = getWholesalePrice(quantity);
-    const currentPrice = wholesalePrice ? wholesalePrice.toString() : (hasDiscount ? product.discount_price : product.selling_price);
-    const discountPercent = hasDiscount
-        ? Math.round(((parseFloat(product.selling_price) - parseFloat(product.discount_price!)) / parseFloat(product.selling_price)) * 100)
-        : 0;
+    const currentPrice = wholesalePrice ? wholesalePrice.toString() : pricing.price;
 
     const allImages = [{ id: 0, photo_name: product.product_thambnail }, ...productImages];
     const colors = product.product_color?.split(',').map(c => c.trim()) || [];
@@ -412,11 +404,11 @@ export default function ProductDetailsPage() {
                                 <div className="w-full lg:flex-1 bg-white relative h-[300px] md:h-[500px] rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                     {/* Badges */}
                                     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                                        {hasDiscount && (
+                                        {pricing.discountPercent ? (
                                             <span className="bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded shadow-sm">
-                                                -{discountPercent}%
+                                                -{pricing.discountPercent}%
                                             </span>
-                                        )}
+                                        ) : null}
                                         {product.new_product === 1 && (
                                             <span className="bg-[#006637] text-white text-xs font-bold px-3 py-1 rounded shadow-sm">
                                                 NEW
@@ -503,12 +495,20 @@ export default function ProductDetailsPage() {
                                 <span className="text-[8px] text-gray-400 self-end mb-1.5 font-medium">Inclusive of VAT</span>
                             </div>
 
-                            {hasDiscount && !wholesalePrice && (
+                            {!wholesalePrice && (pricing.oldPrice || pricing.isContract) && (
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-400 line-through">AED {product.selling_price}</span>
-                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-                                        {discountPercent}% OFF
-                                    </span>
+                                    {pricing.oldPrice && (
+                                        <span className="text-sm text-gray-400 line-through">AED {pricing.oldPrice}</span>
+                                    )}
+                                    {pricing.isContract ? (
+                                        <span className="text-xs font-bold text-white bg-[#006637] px-1.5 py-0.5 rounded uppercase">
+                                            Your Contract Price
+                                        </span>
+                                    ) : pricing.discountPercent ? (
+                                        <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                            {pricing.discountPercent}% OFF
+                                        </span>
+                                    ) : null}
                                 </div>
                             )}
 

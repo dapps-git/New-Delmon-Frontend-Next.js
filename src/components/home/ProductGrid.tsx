@@ -7,6 +7,7 @@ import { homeApi } from "../../service/homeApi";
 import { ProductData, ProductResponse } from "../../types/product.types";
 import { ArrowRight } from "lucide-react";
 import Loading from "../common/Loading";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 const ProductsGrid = ({ initialProducts = [] }: { initialProducts?: any[] }) => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -15,21 +16,7 @@ const ProductsGrid = ({ initialProducts = [] }: { initialProducts?: any[] }) => 
         if (!initialProducts || initialProducts.length === 0) return;
         
         const mappedProducts: Product[] = initialProducts.slice(0, 10).map((item: any) => {
-            let finalPrice = item.selling_price;
-            let oldPrice = undefined;
-            let badge = undefined;
-
-            if (item.discount_price) {
-                finalPrice = item.discount_price;
-                oldPrice = item.selling_price;
-
-                const sell = parseFloat(item.selling_price);
-                const disc = parseFloat(item.discount_price);
-                if (sell > 0) {
-                    const percent = Math.round(((sell - disc) / sell) * 100);
-                    badge = `${percent}% Off`;
-                }
-            }
+            const { price: finalPrice, oldPrice, badge } = getProductPrice(item);
 
             const colors = item.product_color ? item.product_color.split(',').map((c: string) => c.trim()).filter(Boolean) : [];
             const sizes = item.product_size ? item.product_size.split(',').map((s: string) => s.trim()).filter(Boolean) : [];

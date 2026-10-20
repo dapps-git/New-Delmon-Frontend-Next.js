@@ -7,6 +7,7 @@ import ProductCard, { Product } from "../common/ProductCard";
 import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
 import { homeApi } from "../../service/homeApi";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 export interface CategoryProductResponse {
     success: boolean
@@ -23,6 +24,7 @@ export interface CategoryProductData {
     product_qty: string
     selling_price: string
     discount_price: any
+    contract_price?: string | number | null
     product_size?: string
     product_color?: string
     brand_id: number
@@ -93,10 +95,7 @@ const CategoryPageClient = ({ slug, categoryType }: CategoryPageClientProps) => 
     }, [slug, categoryType, currentPage]);
 
     const transformProduct = (apiProduct: CategoryProductData): Product => {
-        const hasDiscount = apiProduct.discount_price && parseFloat(apiProduct.discount_price) > 0;
-        const discountPercent = hasDiscount
-            ? Math.round(((parseFloat(apiProduct.selling_price) - parseFloat(apiProduct.discount_price)) / parseFloat(apiProduct.selling_price)) * 100)
-            : null;
+        const pricing = getProductPrice(apiProduct);
 
         const colors = apiProduct.product_color ? apiProduct.product_color.split(',').map(c => c.trim()).filter(Boolean) : [];
         const sizes = apiProduct.product_size ? apiProduct.product_size.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -106,11 +105,11 @@ const CategoryPageClient = ({ slug, categoryType }: CategoryPageClientProps) => 
             slug: apiProduct.product_slug,
             category: apiProduct.category?.category_name || "Product",
             title: apiProduct.product_name,
-            price: hasDiscount ? `AED ${apiProduct.discount_price}` : `AED ${apiProduct.selling_price}`,
-            oldPrice: hasDiscount ? `AED ${apiProduct.selling_price}` : undefined,
+            price: `AED ${pricing.price}`,
+            oldPrice: pricing.oldPrice ? `AED ${pricing.oldPrice}` : undefined,
             image: `${process.env.NEXT_PUBLIC_IMAGE_BASE}/${apiProduct.product_thambnail}`,
             product_qty: apiProduct.product_qty,
-            discount: discountPercent ? `-${discountPercent}%` : undefined,
+            discount: pricing.isContract ? pricing.badge : pricing.discountPercent ? `-${pricing.discountPercent}%` : undefined,
             colors: colors.length > 0 ? colors : undefined,
             sizes: sizes.length > 0 ? sizes : undefined
         };

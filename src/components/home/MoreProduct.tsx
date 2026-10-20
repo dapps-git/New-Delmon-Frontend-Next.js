@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { homeApi } from "../../service/homeApi";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 interface ApiProduct {
   id: number;
@@ -11,6 +12,7 @@ interface ApiProduct {
   product_thambnail: string;
   selling_price: string;
   discount_price: string | null;
+  contract_price?: string | number | null;
   hot_deals: number | null;
   special_offer: number | null;
   special_deals: number | null;
@@ -37,13 +39,7 @@ export default function MoreProducts({ homeData }: { homeData?: any }) {
 
   // Map API product to CategoryProduct
   const mapProduct = useCallback((item: ApiProduct): CategoryProduct => {
-    let finalPrice = item.selling_price;
-    let oldPrice = undefined;
-
-    if (item.discount_price) {
-      finalPrice = item.discount_price;
-      oldPrice = item.selling_price;
-    }
+    const { price: finalPrice, oldPrice } = getProductPrice(item);
 
     return {
       id: item.id,

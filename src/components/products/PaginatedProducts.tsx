@@ -6,6 +6,7 @@ import { homeApi } from "../../service/homeApi";
 import { ProductData, ProductResponse } from "../../types/product.types";
 import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
+import { getProductPrice } from "@/src/utils/productPrice";
 
 const PaginatedProducts = () => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -25,21 +26,7 @@ const PaginatedProducts = () => {
                     setLastPage(response.meta.last_page)
 
                     const mappedProducts: Product[] = productDataList.map((item: ProductData) => {
-                        let finalPrice = item.selling_price;
-                        let oldPrice = undefined;
-                        let badge = undefined;
-
-                        if (item.discount_price) {
-                            finalPrice = item.discount_price;
-                            oldPrice = item.selling_price;
-
-                            const sell = parseFloat(item.selling_price);
-                            const disc = parseFloat(item.discount_price);
-                            if (sell > 0) {
-                                const percent = Math.round(((sell - disc) / sell) * 100);
-                                badge = `${percent}% Off`;
-                            }
-                        }
+                        const { price: finalPrice, oldPrice, badge } = getProductPrice(item);
 
                         const colors = item.product_color ? item.product_color.split(',').map(c => c.trim()).filter(Boolean) : [];
                         const sizes = item.product_size ? item.product_size.split(',').map(s => s.trim()).filter(Boolean) : [];

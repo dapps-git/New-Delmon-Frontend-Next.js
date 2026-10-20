@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { contractApi } from "@/src/service/contractApi";
 import FormInput from "@/src/components/common/FormInput";
 import ProtectedRoute from "@/src/components/auth/ProtectedRoute";
+import { useAppDispatch, useAppSelector } from "@/src/hooks/useRedux";
+import { fetchUserProfile } from "@/src/redux/auth/authThunk";
 
 export default function ContractRequestPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
+    const contractStatus = useAppSelector((state) => state.auth.user?.contract_status);
     const [loading, setLoading] = useState(false);
+
+    // Already requested/approved users shouldn't see the form again
+    useEffect(() => {
+        if (contractStatus === "Requested") {
+            router.replace("/contract/success");
+        } else if (contractStatus === "Approved") {
+            router.replace("/contract/products");
+        }
+    }, [contractStatus, router]);
     const [form, setForm] = useState({
         name: "",
         company_name: "",
@@ -43,6 +56,7 @@ export default function ContractRequestPage() {
 
             if (res.status !== false) {
                 toast.success(res.message || "Request submitted successfully");
+                dispatch(fetchUserProfile());
                 router.push("/contract/success");
             } else {
                 toast.error(res.error || res.message || "Failed to submit request");
@@ -53,6 +67,10 @@ export default function ContractRequestPage() {
             setLoading(false);
         }
     };
+
+    if (contractStatus === "Requested" || contractStatus === "Approved") {
+        return null;
+    }
 
     return (
         <ProtectedRoute>
